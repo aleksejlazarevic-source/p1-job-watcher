@@ -1,0 +1,113 @@
+# Job Watcher — public sample
+
+Two small scripts that watch Slovenian student-job listing sites and print
+only the *new* postings since the last run. This is the scraping/dedup
+building block from a larger personal job-search pipeline; the AI-based
+criteria matching and notifications are private and not included here.
+
+## Slovensko
+
+### Kaj počne
+`jobwatcher.py` prebere oglase za študentsko delo na
+[Studentski servis](https://www.studentski-servis.com/studenti/prosta-dela),
+`jobwatcher_mojedelo.py` pa oglase, označene kot "Študentsko delo", na
+[MojeDelo](https://www.mojedelo.com). Vsak zažene izpiše samo tiste oglase,
+ki jih pri prejšnjem zagonu še ni bilo — vsak oglas kot ena vrstica JSON.
+
+### Kako deluje
+- Vsak skript si zapomni ID-je že videnih oglasov v svoji datoteki stanja
+  (`seen.json`, `seen_mojedelo.json`), ki ju `.gitignore` izključuje iz repozitorija.
+- Prvi zagon samo "poseje" stanje (zapomni si trenutne oglase) in ne izpiše
+  ničesar, razen z zastavico `--emit-first`.
+- Vsak naslednji zagon primerja trenutne oglase s stanjem in izpiše samo nove.
+- `jobwatcher.py` bere strani neposredno (regex po HTML-ju).
+  `jobwatcher_mojedelo.py` najprej prebere seznam vseh oglasov iz sitemap.xml,
+  nato za vsak nov ID povpraša njihov API in obdrži samo oglase tipa
+  "Študentsko delo".
+- Oba pošiljata zahteve počasi (`time.sleep`) in uporabljata samo Python
+  standardno knjižnico — ni zunanjih odvisnosti.
+
+### Kaj manjka
+- Del, ki nove oglase primerja s `criteria.example.md` (ali pravim
+  `criteria.md`) in odloči, kateri so vredni obvestila, je del zasebnega
+  cevovoda in tukaj ni vključen. `criteria.example.md` kaže samo obliko
+  vhodne datoteke, ki jo ta del bere.
+- Ni razporejevalnika (pri meni teče prek uporabniške systemd storitve) —
+  tukaj ju je treba pognati ročno ali si razporejanje dodati sam.
+- Ni avtomatskih testov.
+- Oba skripta sta odvisna od trenutne strukture HTML/API teh dveh strani;
+  če se stran spremeni, jih bo treba popraviti.
+
+### Primer izpisa
+Ker skripta berta žive strani, resničnega zagona ni mogoče shraniti kot
+ponovljiv primer. `sample_output_studentski.jsonl` in
+`sample_output_mojedelo.jsonl` zato vsebujeta izmišljene primere v točno
+takšni obliki, kot bi jo skripta dejansko izpisala (glej spodaj za angleški
+opis polj).
+
+### Poganjanje
+Potreben je samo Python 3, brez dodatnih paketov.
+
+```
+python3 jobwatcher.py            # prvi zagon: samo poseje stanje, brez izpisa
+python3 jobwatcher.py            # drugi zagon: izpiše nove oglase kot JSON vrstice
+
+python3 jobwatcher_mojedelo.py
+python3 jobwatcher_mojedelo.py
+```
+
+---
+
+## English
+
+### What it does
+`jobwatcher.py` reads student-job listings from
+[Studentski servis](https://www.studentski-servis.com/studenti/prosta-dela).
+`jobwatcher_mojedelo.py` reads ads tagged "Študentsko delo" (student work)
+from [MojeDelo](https://www.mojedelo.com). Each run prints only the postings
+that weren't there on the previous run — one JSON object per line.
+
+### How it works
+- Each script keeps its own state file of already-seen ad IDs
+  (`seen.json`, `seen_mojedelo.json`), which `.gitignore` keeps out of the repo.
+- The first run only seeds that state (records what's currently live) and
+  prints nothing unless run with `--emit-first`.
+- Every later run compares the current listings against the state file and
+  prints only the new ones.
+- `jobwatcher.py` parses the page HTML directly with regular expressions.
+  `jobwatcher_mojedelo.py` first reads the full ad list from the site's
+  sitemap, then queries the site's API per new ID and keeps only ads typed
+  "Študentsko delo".
+- Both throttle their requests (`time.sleep`) and use only the Python
+  standard library — no external dependencies.
+
+### What's missing
+- The step that matches new postings against `criteria.example.md` (or a
+  real `criteria.md`) and decides which ones are worth a notification is
+  part of a private pipeline and isn't included here. `criteria.example.md`
+  only shows the shape of the input file that layer reads.
+- No scheduler (mine runs as a user systemd service) — here the scripts have
+  to be run by hand, or scheduled yourself.
+- No automated tests.
+- Both scripts depend on the current HTML/API shape of these two sites; if a
+  site changes, the scripts will need updating.
+
+### Example output
+Because both scripts hit live sites, a real run can't be captured as a
+reproducible example. `sample_output_studentski.jsonl` and
+`sample_output_mojedelo.jsonl` hold made-up entries in exactly the shape a
+real run would print:
+
+- Studentski servis fields: `id`, `title`, `location`, `pay`, `description`, `url`.
+- MojeDelo fields: the same, plus `hours`, `company`, and `source`.
+
+### Running it
+Needs only Python 3, no extra packages.
+
+```
+python3 jobwatcher.py            # first run: seeds state, prints nothing
+python3 jobwatcher.py            # second run: prints new listings as JSON lines
+
+python3 jobwatcher_mojedelo.py
+python3 jobwatcher_mojedelo.py
+```
