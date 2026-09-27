@@ -8,49 +8,53 @@ criteria matching and notifications are private and not included here.
 ## Slovensko
 
 ### Kaj počne
-`jobwatcher.py` prebere oglase za študentsko delo na
-[Studentski servis](https://www.studentski-servis.com/studenti/prosta-dela),
-`jobwatcher_mojedelo.py` pa oglase, označene kot "Študentsko delo", na
-[MojeDelo](https://www.mojedelo.com). Vsak zažene izpiše samo tiste oglase,
-ki jih pri prejšnjem zagonu še ni bilo — vsak oglas kot ena vrstica JSON.
+`jobwatcher.py` prebira oglase za študentsko delo na strani
+[Studentski servis](https://www.studentski-servis.com/studenti/prosta-dela).
+`jobwatcher_mojedelo.py` prebira oglase, označene kot "Študentsko delo", na
+strani [MojeDelo](https://www.mojedelo.com). Vsak zagon izpiše samo tiste
+oglase, ki jih pri prejšnjem zagonu še ni bilo — vsak oglas kot ena vrstica
+JSON.
 
 ### Kako deluje
-- Vsak skript si zapomni ID-je že videnih oglasov v svoji datoteki stanja
-  (`seen.json`, `seen_mojedelo.json`), ki ju `.gitignore` izključuje iz repozitorija.
-- Prvi zagon samo "poseje" stanje (zapomni si trenutne oglase) in ne izpiše
-  ničesar, razen z zastavico `--emit-first`.
-- Vsak naslednji zagon primerja trenutne oglase s stanjem in izpiše samo nove.
-- `jobwatcher.py` bere strani neposredno (regex po HTML-ju).
-  `jobwatcher_mojedelo.py` najprej prebere seznam vseh oglasov iz sitemap.xml,
-  nato za vsak nov ID povpraša njihov API in obdrži samo oglase tipa
-  "Študentsko delo".
-- Oba pošiljata zahteve počasi (`time.sleep`) in uporabljata samo Python
-  standardno knjižnico — ni zunanjih odvisnosti.
+- Vsak skript v svoji datoteki stanja (`seen.json`, `seen_mojedelo.json`)
+  hrani ID-je že videnih oglasov; ti datoteki `.gitignore` izključuje iz
+  repozitorija.
+- Prvi zagon samo "poseje" stanje (zabeleži, kateri oglasi trenutno
+  obstajajo) in ne izpiše ničesar, razen če ga zaženeš z zastavico
+  `--emit-first`.
+- Vsak naslednji zagon primerja trenutne oglase s shranjenim stanjem in
+  izpiše samo nove.
+- `jobwatcher.py` bere HTML strani neposredno, s pomočjo regularnih
+  izrazov. `jobwatcher_mojedelo.py` najprej prebere celoten seznam oglasov
+  iz datoteke sitemap.xml, nato za vsak nov ID povpraša API strani in
+  obdrži samo oglase, označene kot "Študentsko delo".
+- Oba skripta upočasnjujeta svoje zahteve (`time.sleep`) in uporabljata
+  izključno standardno knjižnico Pythona — brez zunanjih odvisnosti.
 
 ### Kaj manjka
-- Del, ki nove oglase primerja s `criteria.example.md` (ali pravim
-  `criteria.md`) in odloči, kateri so vredni obvestila, je del zasebnega
-  cevovoda in tukaj ni vključen. `criteria.example.md` kaže samo obliko
-  vhodne datoteke, ki jo ta del bere.
-- Ni razporejevalnika (pri meni teče prek uporabniške systemd storitve) —
-  tukaj ju je treba pognati ročno ali si razporejanje dodati sam.
-- Ni avtomatskih testov.
-- Oba skripta sta odvisna od trenutne strukture HTML/API teh dveh strani;
-  če se stran spremeni, jih bo treba popraviti.
+- Korak, ki nove oglase primerja z datoteko `criteria.example.md` (ali
+  pravo `criteria.md`) in odloči, kateri so vredni obvestila, je del
+  zasebnega cevovoda in tukaj ni vključen. `criteria.example.md` prikazuje
+  samo obliko vhodne datoteke, ki jo ta korak bere.
+- Ni razporejevalnika (pri meni teče kot uporabniška systemd storitev) —
+  tukaj je treba skripta pognati ročno ali si razporejanje urediti sam.
+- Ni avtomatiziranih testov.
+- Oba skripta sta odvisna od trenutne oblike HTML-ja/API-ja teh dveh
+  strani; če se stran spremeni, ju bo treba popraviti.
 
 ### Primer izpisa
-Ker skripta berta žive strani, resničnega zagona ni mogoče shraniti kot
-ponovljiv primer. `sample_output_studentski.jsonl` in
-`sample_output_mojedelo.jsonl` zato vsebujeta izmišljene primere v točno
-takšni obliki, kot bi jo skripta dejansko izpisala (glej spodaj za angleški
+Ker oba skripta bereta žive strani, resničnega zagona ni mogoče shraniti
+kot ponovljiv primer. `sample_output_studentski.jsonl` in
+`sample_output_mojedelo.jsonl` zato vsebujeta izmišljene vnose v natanko
+taki obliki, kot bi jo skripta dejansko izpisala (glej spodaj angleški
 opis polj).
 
 ### Poganjanje
 Potreben je samo Python 3, brez dodatnih paketov.
 
 ```
-python3 jobwatcher.py            # prvi zagon: samo poseje stanje, brez izpisa
-python3 jobwatcher.py            # drugi zagon: izpiše nove oglase kot JSON vrstice
+python3 jobwatcher.py            # prvi zagon: poseje stanje, brez izpisa
+python3 jobwatcher.py            # drugi zagon: izpiše nove oglase kot vrstice JSON
 
 python3 jobwatcher_mojedelo.py
 python3 jobwatcher_mojedelo.py
